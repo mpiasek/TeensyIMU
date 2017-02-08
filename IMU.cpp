@@ -11,7 +11,6 @@ IMU::IMU(void)
 int IMU::Initialize(int address, int accelOffsetX, int accelOffsetY, int accelOffsetZ, int gyroOffsetX, int gyroOffsetY, int gyroOffsetZ) 
 {
     _address = address;
-    _mpu.initialize(_address);
     
     // join I2C bus (I2Cdev library doesn't do this automatically)
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -20,7 +19,8 @@ int IMU::Initialize(int address, int accelOffsetX, int accelOffsetY, int accelOf
     #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
         Fastwire::setup(400, true);
     #endif
-    
+
+    _mpu.initialize(_address);
     // load and configure the DMP
     _devStatus = _mpu.dmpInitialize();
 
