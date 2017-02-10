@@ -1,56 +1,59 @@
+// *********************
+// ***** INCLUDES ******
+// *********************
+
+// Sensor includes:
 #include "SysTickImpl.h"
 
-//#define DISPLAY_OOTC_RAW_TIME
-//#define DISPLAY_OOTC
-//#define DISPLAY_OOTC_DATA
-#define DISPLAY_ANGLES
-//#define DISPLAY_RAW_ANGLE
-//#define DISPLAY_SIGNAL_TIMINGS
-//#define DISPLAY_RAW_SIGNAL_DURATIONS
-//#define DISPLAY_NEWLINE_AFTER_Y
-
-#define sensor0 5
-#define sensor1 6
-#define sensor2 7 
-
-#define RINGBUFF_LEN 0x100 // MUST be a power of 2 because of optimzations that replace modulo with bitwise AND
-#define RINGBUFF_MODULO_MASK (RINGBUFF_LEN -1)
-// For example, the two following lines are equivalent:
-//  Val % RINGBUFF_LEN
-//  Val & RINGBUFF_MODULO_MASK
-#define TICKS_PER_US 96 //84 ticks per microsecond
-
-// the high order bit is used to indicate if the entry is a rising or falling edge.
-#define RISING_EDGE 0x00000000
-#define FALLING_EDGE 0x80000000
-//#define MILLIS_MULTIPLIER 10000
-//#define MAX_COUNTER (MILLIS_MULTIPLIER * 84000)
-#define MILLIS_MULTIPLIER 1
-#define MAX_COUNTER (MILLIS_MULTIPLIER * 9600000)
-
-int OotcPulseStartTime; // this should be the same for all sensors.
-
-// IMU
-#define INTERRUPT_PIN_IMU_ONE 8
-#define INTERRUPT_PIN_IMU_TWO 9
-
+// IMU includes:
 #include "IMU.h"
+
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
     #include "Wire.h"
 #endif
 
-IMU imuOne;
-IMU imuTwo;
-// END IMU
-/*
-enum LighthouseState
-{
-  LHS_LOOKING_FOR_OOTC = 0;
-  LHS_LOOKING_FOR_PULSES = 1;
-};
-*/
+
+// *********************
+// ****** DEFINES ******
+// *********************
+
+// Sensor defines:
+#define DISPLAY_ANGLES
+
+#define sensor0 5
+#define sensor1 6
+#define sensor2 7
+
+// RINGBUFF_LEN must be a power of 2 because of optimzations that replace modulo with bitwise AND
+#define RINGBUFF_LEN 0x100
+
+#define RINGBUFF_MODULO_MASK (RINGBUFF_LEN -1)
+// For example, the two following lines are equivalent:
+//  Val % RINGBUFF_LEN
+//  Val & RINGBUFF_MODULO_MASK
+
+#define TICKS_PER_US 96
+
+// the high order bit is used to indicate if the entry is a rising or falling edge.
+#define RISING_EDGE 0x00000000
+#define FALLING_EDGE 0x80000000
+
+#define MILLIS_MULTIPLIER 1
+#define MAX_COUNTER (MILLIS_MULTIPLIER * 9600000)
+
+#define MAX_RECEIVERS 7
 
 
+// IMU defines:
+#define INTERRUPT_PIN_IMU_ONE 8
+#define INTERRUPT_PIN_IMU_TWO 9
+
+
+// ***********************
+// * CLASSES AND STRUCTS *
+// ***********************
+
+// Sensor classes and structs:
 class RingBuff
 {
   public:
@@ -69,9 +72,6 @@ class RingBuff
   }
 };
 
-
-static RingBuff ringBuff;
-
 struct OotcPulseInfo
 {
   int startTime;
@@ -87,8 +87,6 @@ struct OotcPulseInfo
     skip=false;
   }
 };
-
-OotcPulseInfo OotcInfo;
 
 class IrReceiver
 {
@@ -107,41 +105,67 @@ class IrReceiver
     Y=0;
     isAsserted = false;
     lastRiseTime=0;
-//  lastDuration = 0;
-    
   }  
   
 };
 
-#define MAX_RECEIVERS 7
+
+// **********************
+// ** GLOBAL VARIABLES **
+// **********************
+
+// Sensor global variables:
+
+// this should be the same for all sensors.
+int OotcPulseStartTime;
+
+static RingBuff ringBuff;
+
+OotcPulseInfo OotcInfo;
+
 IrReceiver gReceiver[MAX_RECEIVERS];
 
 SysTickImpl* SysTick = new SysTickImpl();
 
 long int down=0, up=0;
 
-// the setup function runs once when you press reset or power the board
+
+// IMU global variables:
+IMU imuOne;
+IMU imuTwo;
+
+
+// *********************
+// ******* SETUP *******
+// *********************
+
 void setup() 
 {
+  Serial.begin(9600);
+  
   // initialize digital pin 13 as an output.
   pinMode(13, OUTPUT);
-    
+
+  // Pins used for sensors
   pinMode(sensor0, INPUT);
   pinMode(sensor1, INPUT);
   pinMode(sensor2, INPUT);
-  
+
+  attachInterrupt(digitalPinToInterrupt(sensor0), ISR0, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(sensor1), ISR1, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(sensor2), ISR2, CHANGE);
+
+  // Extra pins...
   pinMode(15, INPUT);
   pinMode(14, INPUT);
   pinMode(10, INPUT);
   pinMode(9, INPUT);
   pinMode(18, INPUT);
   pinMode(19, INPUT);
-  
-  Serial.begin(9600);
 
   Serial.print("SysTick->LOAD: ");
-  Serial.println(SysTick->GetLoad());
 
+  
   // BEWARE!!!  The following line changes the working of the Arduino's inner clock.
   // Specifically, it will make it run 100X slower.  So, if you call "delay(10)" you
   // will instead delay by a full second instead of 10 milliseconds.
@@ -150,90 +174,63 @@ void setup()
   SysTick->SetLoad(9599999);
 
   Serial.print("SysTick->LOAD: ");
-  Serial.println(SysTick->GetLoad());
+
   // IMU
-    pinMode(INTERRUPT_PIN_IMU_ONE, INPUT);
-    pinMode(INTERRUPT_PIN_IMU_TWO, INPUT);
-    attachInterrupt(INTERRUPT_PIN_IMU_ONE, ImuOneDataReady, RISING);
-    attachInterrupt(INTERRUPT_PIN_IMU_TWO, ImuTwoDataReady, RISING);
-    imuOne.Initialize(0x68, -3348, 9999, 210, 220, 76, -85);
-    imuTwo.Initialize(0x69, -3348, 9999, 806, 220, 76, -85);
-  // END IMU;
-  // flip the FALLING and RISING here because the input signal is active low
-
-  #define ONE_INTERRUPT
-
-
-
-  #ifdef TWO_INTERRUPTS
-  attachInterrupt(digitalPinToInterrupt(15), rising0, FALLING);
-  attachInterrupt(digitalPinToInterrupt(14), falling0, RISING);
+  pinMode(INTERRUPT_PIN_IMU_ONE, INPUT);
+  pinMode(INTERRUPT_PIN_IMU_TWO, INPUT);
   
-  attachInterrupt(digitalPinToInterrupt(10), rising1, FALLING);
-  attachInterrupt(digitalPinToInterrupt(9), falling1, RISING);
-
-  attachInterrupt(digitalPinToInterrupt(19), rising2, FALLING);
-  attachInterrupt(digitalPinToInterrupt(18), falling2, RISING);
-  #endif
-
-  #ifdef ONE_INTERRUPT
-  attachInterrupt(digitalPinToInterrupt(sensor0), ISR0, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(sensor1), ISR1, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(sensor2), ISR2, CHANGE);
-  #endif
-
+  attachInterrupt(INTERRUPT_PIN_IMU_ONE, ImuOneDataReady, RISING);
+  attachInterrupt(INTERRUPT_PIN_IMU_TWO, ImuTwoDataReady, RISING);
+  
+  imuOne.Initialize(0x68, -3348, 9999, 210, 220, 76, -85);
+  imuTwo.Initialize(0x69, -3348, 9999, 806, 220, 76, -85);
+  // END IMU;
 }
-//
-//
-//// the loop function runs over and over again forever
+
+
+// *********************
+// ******* LOOP ********
+// *********************
+
 void loop() 
 {
-//
-////  delay (1);  
-//  //delayMicroseconds(10);
-//
-////  ProcessSensor(0);
-////  ProcessSensor(1);
-////  ProcessSensor(2);
-////  ProcessSensor(3);
-////  ProcessSensor(4);
-////  ProcessSensor(5);
-//
-    ProcessRingBuff();
-////  
-// IMU
-     if(imuOne.Process())
-   {
-      if(imuTwo.Process())
-      {
-         /*Serial.print(imuOne.GetWorldPitch() * 180/M_PI);
-         Serial.print(" ");
-         Serial.println(imuTwo.GetWorldPitch() * 180/M_PI);*/
-         Serial.println("IMU");
-         Serial.print(imuOne.GetGravityX());
-         Serial.print(" ");
-         Serial.print(imuOne.GetGravityY());
-         Serial.print(" ");
-         Serial.print(imuOne.GetGravityZ());
-         Serial.print(" ");
-         Serial.print(imuTwo.GetGravityX());
-         Serial.print(" ");
-         Serial.print(imuTwo.GetGravityY());
-         Serial.print(" ");
-         Serial.println(imuTwo.GetGravityZ());
-      }
-   }
-   // END IMU
+  // Process Sensor Data
+  ProcessRingBuff();
+ 
+  // Process IMU Data
+  if(imuOne.Process())
+  {
+    if(imuTwo.Process())
+    {
+      /*Serial.print(imuOne.GetWorldPitch() * 180/M_PI);
+      Serial.print(" ");
+      Serial.println(imuTwo.GetWorldPitch() * 180/M_PI);*/
+      Serial.println("IMU");
+      Serial.print(imuOne.GetGravityX());
+      Serial.print(" ");
+      Serial.print(imuOne.GetGravityY());
+      Serial.print(" ");
+      Serial.print(imuOne.GetGravityZ());
+      Serial.print(" ");
+      Serial.print(imuTwo.GetGravityX());
+      Serial.print(" ");
+      Serial.print(imuTwo.GetGravityY());
+      Serial.print(" ");
+      Serial.println(imuTwo.GetGravityZ());
+    }
+  }
+  // END IMU
 }
 
+
+// *********************
+// ** PROCESS SENSORS **
+// *********************
 
 void ProcessRingBuff()
 {
-
   while ((((ringBuff.writerPos - 1 - ringBuff.readerPos) + RINGBUFF_LEN) & RINGBUFF_MODULO_MASK) != 0)
   {
-
-    
     ringBuff.readerPos = (ringBuff.readerPos+1) & RINGBUFF_MODULO_MASK;
     
     bool isFalling = false;
@@ -264,7 +261,7 @@ void ProcessRingBuff()
       gReceiver[sensor].lastRiseTime = val;
 
       #define CLOCK_CYCLES_PER_ROTATION  1600000
-//      #define MAX_CLOCK_CYCLES_PER_SWEEP (CLOCK_CYCLES_PER_ROTATION / 2)
+
       // the value below represents 170 degrees.  If we allow 180 degrees, we get hit with the
       // next sync pulse for the other laser and we erroniously consider it a laser sweep.
       #define MAX_CLOCK_CYCLES_PER_SWEEP (CLOCK_CYCLES_PER_ROTATION * 170 / 360)
@@ -289,9 +286,6 @@ void ProcessRingBuff()
         {
             gReceiver[sensor].X = angle;      
         }
-
-        // TODO: put a last update timestamp on as well.
-        
       }
     }
     else
@@ -363,7 +357,6 @@ void ProcessRingBuff()
           gReceiver[i].lastRiseTime = poisonValue;
         }        
 
-        
         // Now we need to decode the OOTC pulse;
         unsigned int decodedPulseVal = (duration - BASE_OOTC_TICKS) / TICKS_PER_OOTC_CHANNEL;
 
@@ -386,9 +379,6 @@ static int jumpCounter=0;
 jumpCounter++;
 if (jumpCounter %10 == 0)
 {
-//        Serial.print((ringBuff.writerPos + RINGBUFF_LEN - ringBuff.readerPos) & RINGBUFF_MODULO_MASK);
-//        Serial.print((ringBuff.writerPos + RINGBUFF_MAX - ringBuff.readerPos) & RINGBUFF_MODULO_MASK);
-//        Serial.print(" ");
         Serial.println("TS3633");
         for (int i=0; i < 3 /*MAX_RECEIVERS*/; i++)
         {
@@ -402,33 +392,29 @@ if (jumpCounter %10 == 0)
         
         Serial.println("");
 }
-#endif
-
-        // TODO: ProcessOotcBit(gReceiver[sensor].data);        
+#endif      
       }
-          ////////////////////////
     }
 
-static int counter = 0;
-counter++;
-if (counter % 100 == 0 & false)
-{
-    Serial.print((ringBuff.writerPos + RINGBUFF_LEN - ringBuff.readerPos) & RINGBUFF_MODULO_MASK);
-    Serial.print(" ");
-    Serial.print(isFalling);
-    Serial.print(" ");
-    Serial.print(sensor);
-    Serial.print(" ");
-    Serial.println(val);
-}
-    
-  
+    static int counter = 0;
+    counter++;
+    if (counter % 100 == 0 & false)
+    {
+        Serial.print((ringBuff.writerPos + RINGBUFF_LEN - ringBuff.readerPos) & RINGBUFF_MODULO_MASK);
+        Serial.print(" ");
+        Serial.print(isFalling);
+        Serial.print(" ");
+        Serial.print(sensor);
+        Serial.print(" ");
+        Serial.println(val);
+    }
   }
 }
 
 
-
-
+// *********************
+// ******* ISRs ********
+// *********************
 
 //    gReceiver[receiver].buff[gReceiver[receiver].writerPos] = SysTick->VAL  + ((10000-(millis()%10000)) * 84000);\
 
@@ -448,59 +434,6 @@ if (counter % 100 == 0 & false)
     ringBuff.writerPos = (ringBuff.writerPos+1) & RINGBUFF_MODULO_MASK;\
   }
 
-#ifdef TWO_INTERRUPTS
-void rising0()
-{
-  RISING_INTERRUPT_BODY(0)
-}
-void falling0()
-{
-  FALLING_INTERRUPT_BODY(0)
-}
-void rising1()
-{
-  RISING_INTERRUPT_BODY(1)
-}
-void falling1()
-{
-  FALLING_INTERRUPT_BODY(1)
-}
-void rising2()
-{
-  RISING_INTERRUPT_BODY(2)
-}
-void falling2()
-{
-  FALLING_INTERRUPT_BODY(2)
-}
-void rising3()
-{
-  RISING_INTERRUPT_BODY(3)
-}
-void falling3()
-{
-  FALLING_INTERRUPT_BODY(3)
-}
-void rising4()
-{
-  RISING_INTERRUPT_BODY(4)
-}
-void falling4()
-{
-  FALLING_INTERRUPT_BODY(4)
-}
-void rising5()
-{
-  RISING_INTERRUPT_BODY(5)
-}
-void falling5()
-{
-  FALLING_INTERRUPT_BODY(5)
-}
-#endif
-
-
-#ifdef ONE_INTERRUPT
 void ISR0()
 {
   if(digitalRead(sensor0) == LOW) {
@@ -530,8 +463,9 @@ void ISR2()
     FALLING_INTERRUPT_BODY(2)
   }
 }
-#endif
-// IMU
+
+
+// IMU ISRs
 void ImuOneDataReady() {
     imuOne.SetInterrupt(true);
 }
@@ -539,4 +473,4 @@ void ImuOneDataReady() {
 void ImuTwoDataReady() {
     imuTwo.SetInterrupt(true);
 }
-//END IMU
+
