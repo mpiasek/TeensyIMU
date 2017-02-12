@@ -1,3 +1,4 @@
+
 // *********************
 // ***** INCLUDES ******
 // *********************
@@ -20,9 +21,9 @@
 // Sensor defines:
 #define DISPLAY_ANGLES
 
-#define sensor0 5
-#define sensor1 6
-#define sensor2 7
+#define sensor0 15
+#define sensor1 10
+#define sensor2 17
 
 // RINGBUFF_LEN must be a power of 2 because of optimzations that replace modulo with bitwise AND
 #define RINGBUFF_LEN 0x100
@@ -43,10 +44,9 @@
 
 #define MAX_RECEIVERS 7
 
-
 // IMU defines:
-#define INTERRUPT_PIN_IMU_ONE 8
-#define INTERRUPT_PIN_IMU_TWO 9
+#define INTERRUPT_PIN_IMU_ONE 11
+#define INTERRUPT_PIN_IMU_TWO 12
 
 
 // ***********************
@@ -129,7 +129,6 @@ SysTickImpl* SysTick = new SysTickImpl();
 
 long int down=0, up=0;
 
-
 // IMU global variables:
 IMU imuOne;
 IMU imuTwo;
@@ -142,9 +141,6 @@ IMU imuTwo;
 void setup() 
 {
   Serial.begin(9600);
-  
-  // initialize digital pin 13 as an output.
-  pinMode(13, OUTPUT);
 
   // Pins used for sensors
   pinMode(sensor0, INPUT);
@@ -155,25 +151,12 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(sensor1), ISR1, CHANGE);
   attachInterrupt(digitalPinToInterrupt(sensor2), ISR2, CHANGE);
 
-  // Extra pins...
-  pinMode(15, INPUT);
-  pinMode(14, INPUT);
-  pinMode(10, INPUT);
-  pinMode(9, INPUT);
-  pinMode(18, INPUT);
-  pinMode(19, INPUT);
-
-  Serial.print("SysTick->LOAD: ");
-
-  
   // BEWARE!!!  The following line changes the working of the Arduino's inner clock.
   // Specifically, it will make it run 100X slower.  So, if you call "delay(10)" you
   // will instead delay by a full second instead of 10 milliseconds.
   // This is needed in order to do the high precision timing needed to capture
   // the pulses from the lighthouse.  
   SysTick->SetLoad(9599999);
-
-  Serial.print("SysTick->LOAD: ");
 
   // IMU
   pinMode(INTERRUPT_PIN_IMU_ONE, INPUT);
@@ -463,7 +446,6 @@ void ISR2()
     FALLING_INTERRUPT_BODY(2)
   }
 }
-
 
 // IMU ISRs
 void ImuOneDataReady() {
