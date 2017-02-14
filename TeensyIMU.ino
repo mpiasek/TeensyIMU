@@ -21,9 +21,9 @@
 // Sensor defines:
 #define DISPLAY_ANGLES
 
-#define sensor0 15
-#define sensor1 10
-#define sensor2 17
+#define sensor0 5
+#define sensor1 6
+#define sensor2 7
 
 // RINGBUFF_LEN must be a power of 2 because of optimzations that replace modulo with bitwise AND
 #define RINGBUFF_LEN 0x100
@@ -45,9 +45,11 @@
 #define MAX_RECEIVERS 7
 
 // IMU defines:
-#define INTERRUPT_PIN_IMU_ONE 11
-#define INTERRUPT_PIN_IMU_TWO 12
+#define INTERRUPT_PIN_IMU_ONE 8
+#define INTERRUPT_PIN_IMU_TWO 9
 
+// USB or Bluetooth
+const bool BLUETOOTH = false;
 
 // ***********************
 // * CLASSES AND STRUCTS *
@@ -188,7 +190,7 @@ void loop()
       /*Serial.print(imuOne.GetWorldPitch() * 180/M_PI);
       Serial.print(" ");
       Serial.println(imuTwo.GetWorldPitch() * 180/M_PI);*/
-      Serial.println("IMU");
+      Serial.print("IMU ");
       Serial.print(imuOne.GetGravityX());
       Serial.print(" ");
       Serial.print(imuOne.GetGravityY());
@@ -362,7 +364,7 @@ static int jumpCounter=0;
 jumpCounter++;
 if (jumpCounter %10 == 0)
 {
-        Serial.println("TS3633");
+        Serial.print("TS3633 ");
         for (int i=0; i < 3 /*MAX_RECEIVERS*/; i++)
         {
           Serial.print(i);
@@ -393,7 +395,6 @@ if (jumpCounter %10 == 0)
     }
   }
 }
-
 
 // *********************
 // ******* ISRs ********
