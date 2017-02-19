@@ -89,7 +89,7 @@ int IMU::Process()
             _mpu.dmpGetLinearAccelInWorld(&_aaWorld, &_aaReal, &_q);
             
             //Get the change in time
-            Now = millis();
+            Now = micros();
             _deltat = (float) (Now - _Before);
             _Before = Now; 
 

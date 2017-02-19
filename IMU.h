@@ -42,7 +42,7 @@ class IMU {
         float GetAccelY(); //returns raw readings in LSB/g
         float GetAccelZ(); //returns raw readings in LSB/g
         
-        float GetDeltaT(); //return in ms
+        float GetDeltaT(); //return in us
        
         bool GetInterrupt();
         void SetInterrupt(bool value);
