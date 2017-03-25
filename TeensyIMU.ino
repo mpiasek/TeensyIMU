@@ -24,6 +24,13 @@
 #define sensor0 5
 #define sensor1 6
 #define sensor2 7
+#define sensor3
+#define sensor4
+#define sensor5
+#define sensor6
+#define sensor7
+#define sensor8
+#define sensor9
 
 // RINGBUFF_LEN must be a power of 2 because of optimzations that replace modulo with bitwise AND
 #define RINGBUFF_LEN 0x100
@@ -42,7 +49,7 @@
 #define MILLIS_MULTIPLIER 1
 #define MAX_COUNTER (MILLIS_MULTIPLIER * 9600000)
 
-#define MAX_RECEIVERS 7
+#define MAX_RECEIVERS 10
 
 // IMU defines:
 #define INTERRUPT_PIN_IMU_ONE 8
@@ -148,10 +155,24 @@ void setup()
   pinMode(sensor0, INPUT);
   pinMode(sensor1, INPUT);
   pinMode(sensor2, INPUT);
+  pinMode(sensor3, INPUT);
+  pinMode(sensor4, INPUT);
+  pinMode(sensor5, INPUT);
+  pinMode(sensor6, INPUT);
+  pinMode(sensor7, INPUT);
+  pinMode(sensor8, INPUT);
+  pinMode(sensor9, INPUT);
 
   attachInterrupt(sensor0, ISR0, CHANGE);
   attachInterrupt(sensor1, ISR1, CHANGE);
   attachInterrupt(sensor2, ISR2, CHANGE);
+  attachInterrupt(sensor3, ISR3, CHANGE);
+  attachInterrupt(sensor4, ISR4, CHANGE);
+  attachInterrupt(sensor5, ISR5, CHANGE);
+  attachInterrupt(sensor6, ISR6, CHANGE);
+  attachInterrupt(sensor7, ISR7, CHANGE);
+  attachInterrupt(sensor8, ISR8, CHANGE);
+  attachInterrupt(sensor9, ISR9, CHANGE);
 
   // BEWARE!!!  The following line changes the working of the Arduino's inner clock.
   // Specifically, it will make it run 100X slower.  So, if you call "delay(10)" you
@@ -365,7 +386,7 @@ jumpCounter++;
 if (jumpCounter %10 == 0)
 {
         Serial.print("TS3633 ");
-        for (int i=0; i < 3 /*MAX_RECEIVERS*/; i++)
+        for (int i=0; i < MAX_RECEIVERS; i++)
         {
           Serial.print(i);
           Serial.print(" ");
@@ -447,6 +468,76 @@ void ISR2()
   }
   else {
     FALLING_INTERRUPT_BODY(2)
+  }
+}
+
+void ISR3()
+{
+  if(digitalRead(sensor3) == LOW) {
+    RISING_INTERRUPT_BODY(3)
+  }
+  else {
+    FALLING_INTERRUPT_BODY(3)
+  }
+}
+
+void ISR4()
+{
+  if(digitalRead(sensor4) == LOW) {
+    RISING_INTERRUPT_BODY(4)
+  }
+  else {
+    FALLING_INTERRUPT_BODY(4)
+  }
+}
+
+void ISR5()
+{
+  if(digitalRead(sensor5) == LOW) {
+    RISING_INTERRUPT_BODY(5)
+  }
+  else {
+    FALLING_INTERRUPT_BODY(5)
+  }
+}
+
+void ISR6()
+{
+  if(digitalRead(sensor6) == LOW) {
+    RISING_INTERRUPT_BODY(6)
+  }
+  else {
+    FALLING_INTERRUPT_BODY(6)
+  }
+}
+
+void ISR7()
+{
+  if(digitalRead(sensor7) == LOW) {
+    RISING_INTERRUPT_BODY(7)
+  }
+  else {
+    FALLING_INTERRUPT_BODY(7)
+  }
+}
+
+void ISR8()
+{
+  if(digitalRead(sensor8) == LOW) {
+    RISING_INTERRUPT_BODY(8)
+  }
+  else {
+    FALLING_INTERRUPT_BODY(8)
+  }
+}
+
+void ISR9()
+{
+  if(digitalRead(sensor9) == LOW) {
+    RISING_INTERRUPT_BODY(9)
+  }
+  else {
+    FALLING_INTERRUPT_BODY(9)
   }
 }
 
