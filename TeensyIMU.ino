@@ -149,9 +149,9 @@ void setup()
   pinMode(sensor1, INPUT);
   pinMode(sensor2, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(sensor0), ISR0, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(sensor1), ISR1, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(sensor2), ISR2, CHANGE);
+  attachInterrupt(sensor0, ISR0, CHANGE);
+  attachInterrupt(sensor1, ISR1, CHANGE);
+  attachInterrupt(sensor2, ISR2, CHANGE);
 
   // BEWARE!!!  The following line changes the working of the Arduino's inner clock.
   // Specifically, it will make it run 100X slower.  So, if you call "delay(10)" you
@@ -159,7 +159,7 @@ void setup()
   // This is needed in order to do the high precision timing needed to capture
   // the pulses from the lighthouse.  
   SysTick->SetLoad(9599999);
-
+  
   // IMU
   pinMode(INTERRUPT_PIN_IMU_ONE, INPUT);
   pinMode(INTERRUPT_PIN_IMU_TWO, INPUT);
@@ -167,8 +167,8 @@ void setup()
   attachInterrupt(INTERRUPT_PIN_IMU_ONE, ImuOneDataReady, RISING);
   attachInterrupt(INTERRUPT_PIN_IMU_TWO, ImuTwoDataReady, RISING);
   
-  imuOne.Initialize(0x68, -3348, 9999, 210, 220, 76, -85);
-  imuTwo.Initialize(0x69, -3348, 9999, 806, 220, 76, -85);
+  imuOne.Initialize(0x68, -3348, 9999, 806, 220, 76, -85);
+  //imuTwo.Initialize(0x69, -1917, 9999, 1240, 220, 76, -85);
   // END IMU;
 }
 
@@ -185,24 +185,24 @@ void loop()
   // Process IMU Data
   if(imuOne.Process())
   {
-    if(imuTwo.Process())
-    {
-      /*Serial.print(imuOne.GetWorldPitch() * 180/M_PI);
-      Serial.print(" ");
-      Serial.println(imuTwo.GetWorldPitch() * 180/M_PI);*/
-      Serial.print("IMU ");
-      Serial.print(imuOne.GetGravityX());
-      Serial.print(" ");
-      Serial.print(imuOne.GetGravityY());
-      Serial.print(" ");
-      Serial.print(imuOne.GetGravityZ());
-      Serial.print(" ");
-      Serial.print(imuTwo.GetGravityX());
-      Serial.print(" ");
-      Serial.print(imuTwo.GetGravityY());
-      Serial.print(" ");
-      Serial.println(imuTwo.GetGravityZ());
-    }
+        
+        Serial.print("IMU ");
+        Serial.print(imuOne.GetWorldQuaternion0());
+        Serial.print(" ");
+        Serial.print(imuOne.GetWorldQuaternion1());
+        Serial.print(" ");
+        Serial.print(imuOne.GetWorldQuaternion2());
+        Serial.print(" ");
+        Serial.print(imuOne.GetWorldQuaternion3());
+        Serial.print(" ");
+        Serial.print(imuOne.GetWorldAccelX());
+        Serial.print(" ");
+        Serial.print(imuOne.GetWorldAccelY());
+        Serial.print(" ");
+        Serial.print(imuOne.GetWorldAccelZ());
+        Serial.print(" ");
+        Serial.println(imuOne.GetDeltaT());
+        
   }
   // END IMU
 }
@@ -372,7 +372,9 @@ if (jumpCounter %10 == 0)
           Serial.print(gReceiver[i].X);
           Serial.print(" ");
           Serial.print(gReceiver[i].Y);
-          Serial.print(" ");      
+          Serial.print(" "); 
+          gReceiver[i].X = 0;
+          gReceiver[i].Y = 0;     
         }
         
         Serial.println("");
