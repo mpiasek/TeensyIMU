@@ -21,16 +21,16 @@
 // Sensor defines:
 #define DISPLAY_ANGLES
 
-#define sensor0 5
-#define sensor1 6
-#define sensor2 7
-#define sensor3
-#define sensor4
-#define sensor5
-#define sensor6
-#define sensor7
-#define sensor8
-#define sensor9
+#define sensor0 19
+#define sensor1 9
+#define sensor2 9
+#define sensor3 9
+#define sensor4 9
+#define sensor5 9
+#define sensor6 9
+#define sensor7 9
+#define sensor8 9
+#define sensor9 9
 
 // RINGBUFF_LEN must be a power of 2 because of optimzations that replace modulo with bitwise AND
 #define RINGBUFF_LEN 0x100
