@@ -21,16 +21,16 @@
 // Sensor defines:
 #define DISPLAY_ANGLES
 
-#define sensor0 19
-#define sensor1 9
+#define sensor0 2
+#define sensor1 7
 #define sensor2 9
-#define sensor3 9
-#define sensor4 9
-#define sensor5 9
-#define sensor6 9
-#define sensor7 9
-#define sensor8 9
-#define sensor9 9
+#define sensor3 11
+#define sensor4 13
+#define sensor5 5
+#define sensor6 5
+#define sensor7 5
+#define sensor8 5
+#define sensor9 5
 
 // RINGBUFF_LEN must be a power of 2 because of optimzations that replace modulo with bitwise AND
 #define RINGBUFF_LEN 0x100
@@ -184,7 +184,7 @@ void setup()
   // IMU
   pinMode(INTERRUPT_PIN_IMU_ONE, INPUT);
   pinMode(INTERRUPT_PIN_IMU_TWO, INPUT);
-  
+
   attachInterrupt(INTERRUPT_PIN_IMU_ONE, ImuOneDataReady, RISING);
   attachInterrupt(INTERRUPT_PIN_IMU_TWO, ImuTwoDataReady, RISING);
   
