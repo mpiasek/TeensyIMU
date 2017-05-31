@@ -36,7 +36,8 @@ This repository contains helpful information for building your own Strap-On. The
 * This code was written for the [**Teensy 3.2**](https://www.pjrc.com/store/teensy32.html)
 * There is a Teensy plug-in for the Arduino IDE called [Teensyduino](https://www.pjrc.com/teensy/teensyduino.html)
 * Follow the instruction in the above link to download and install the Teensyduino
-* If you don't have the Arduino IDE, you can download it [here](https://www.arduino.cc/en/main/software) 
+* If you don't have the Arduino IDE, you can download it [here](https://www.arduino.cc/en/main/software)
+* The arduino project file is under the `TeensyIMU/` folder. (`TeensyIMU/TeensyIMU/` once this project is cloned)
 
 ## Notes
 - Remember to **CHECK THE PINS** for Photodiodes and for IMUs
